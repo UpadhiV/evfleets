@@ -53,7 +53,7 @@ const headers = [
   {label: 'Route ID', value: 'route_id'}, 
   {label: 'No of buses', value: 'No of buses'}, 
 
-  {label: 'TCO per route - D ($/yr)', value: 'TCO per route - D'}, 
+  {label: 'TCO per route - D ($/lifetime)', value: 'TCO per route - D'}, 
   {label: 'Level of Service -D', value: 'Level of Service -D'}, 
   {label: 'Emissions -D (ton CO2/yr)', value: 'Emissions -D'}, 
   {label: 'Health impact -D (USD Millions 2020)', value: 'Health impact -D'}, 
@@ -62,7 +62,7 @@ const headers = [
   {label: 'Emissions <=', value: ''},
   {label: 'Technically Feasible?', value: 'feasible'}, 
   {label: '', value: ''}, 
-  {label: 'TCO per route - E ($/yr)', value: 'TCO per route - E'}, 
+  {label: 'TCO per route - E ($/lifetime)', value: 'TCO per route - E'}, 
   {label: 'Level of Service -E', value: 'Level of Service -E'}, 
   {label: 'Emissions -E (ton CO2/yr)', value: 'Emissions -E'}, 
   {label: 'Health impact -E (USD Millions 2020)', value: 'Health impact -E'}
@@ -79,7 +79,7 @@ export default function TableData(props) {
   tabledata.forEach(row => {
     row["tcoComp"] = row["TCO per route - E"] <= row["TCO per route - D"] * (tcoComparison / 100.0) ? true : false;
     row["emissionsComp"] = row["Emissions -E"] <= row["Emissions -D"] * (emissionsComparison / 100.0) ? true : false;
-    row["feasible"] = row["tcoComp"] || row["emissionsComp"] ? "yes" : "no";
+    row["feasible"] = row["tcoComp"] && row["emissionsComp"] ? "yes" : "no";
   })
 
   tabledata.sort((a, b) => {

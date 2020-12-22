@@ -11,12 +11,12 @@ def changeCity(city):
     
     db_uri = ""
     if city == "Boston":
-        db_uri = 'mysql+mysqlconnector://root:vibhor@localhost:3306/mydb'
+        db_uri = 'sqlite:///mydb.db'
     elif city == "Milan":
-        db_uri = 'mysql+mysqlconnector://root:vibhor@localhost:3306/mdb'
+        db_uri = 'sqlite:///mdb.db'
         
     #create connection to database 
-    engine = sqlalchemy.create_engine(db_uri, pool_size=25, max_overflow=10, pool_timeout=60,pool_recycle=3600)
+    engine = sqlalchemy.create_engine(db_uri)
 
 
     #Import cities data
@@ -43,7 +43,6 @@ def changeCity(city):
     #loading trip cluster information from the database 
     query = "SELECT * FROM mbta_route_data;"
     trip_data = pd.read_sql(query, engine)
-
 
 #generate dynamic checkboxes based on city selected
 def generate_control_id(value):
