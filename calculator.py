@@ -11,9 +11,9 @@ def changeCity(city):
     
     db_uri = ""
     if city == "Boston":
-        db_uri = 'mysql+mysqlconnector://root:vibhor@localhost:3306/mydb'
+        db_uri = 'mysql+mysqlconnector://root:123456@localhost/mydb'
     elif city == "Milan":
-        db_uri = 'mysql+mysqlconnector://root:vibhor@localhost:3306/mdb'
+        db_uri = 'mysql+mysqlconnector://root:123456@localhost/mdb'
         
     #create connection to database 
     engine = sqlalchemy.create_engine(db_uri, pool_size=25, max_overflow=10, pool_timeout=60,pool_recycle=3600)
@@ -41,8 +41,8 @@ def changeCity(city):
     energy_data = pd.read_sql(query, engine).drop(columns = ["index"])
 
     #loading trip cluster information from the database 
-    query = "SELECT * FROM mbta_route_data;"
-    trip_data = pd.read_sql(query, engine)
+    # query = "SELECT * FROM mbta_route_data;"
+    # trip_data = pd.read_sql(query, engine)
 
 
 #generate dynamic checkboxes based on city selected
@@ -56,33 +56,33 @@ def dynamic_control (city):
 
 def graph_plot( bus_cost, utility, fuel_price, dc_efficiency, demand_charge, bus_type):
     
-    #estimating number of chargers 
+   #estimating number of chargers 
     num_chargers  = np.ceil((energy_data["energy_"+ bus_type]/7)/(calc_lib["charge_power_dc"].values[0]* bus_lib[bus_lib.type == bus_type]["charging_time"].values[0]*dc_efficiency))
     
     #capital costs
-    capital_cost_e = (bus_cost+cost_lib["batt_cost20"].values[0]* bus_lib[bus_lib.type == bus_type]["battery_size"].values[0]) *  energy_data.num_buses + num_chargers*(cost_lib["charger_costs"][0]+cost_lib["instal_costs"][0])
-    capital_cost_d = cost_lib["diesel_bus_cost"][0] * energy_data.num_buses 
+    capital_cost_e = (bus_cost+ cost_lib["batt_cost27"].values[0]* bus_lib[bus_lib.type == bus_type]["battery_size"].values[0]) *  energy_data.num_buses + num_chargers*(cost_lib["charger_costs"][0]+cost_lib["instal_costs"][0])
+    capital_cost_d = cost_lib[bus_type+"_cost"][0] * energy_data.num_buses 
     
     #Vehicle maintainance costs 
-    vmaint_cost_e = cost_lib["vehicle_main_e"][0]* energy_data.VKT * 0.621371 #coverting km to miles 
-    vmaint_cost_d = cost_lib["vehicle_ main_d"][0]* energy_data.VKT * 0.621371
+    vmaint_cost_e = cost_lib["vehicle_main_e"][0]* energy_data.VKT * 0.621371*52*12 #coverting km to miles 
+    vmaint_cost_d = cost_lib["vehicle_ main_d"][0]* energy_data.VKT * 0.621371*52*12
     
-    #charging costs 
-    fuel_costs_e = (((energy_data["energy_" + bus_type]*4.35*utility)/dc_efficiency ) + (num_chargers*calc_lib["charge_power_dc"][0]* demand_charge)*12)
-    fuel_costs_d = fuel_price * (energy_data.VKT * 0.621371 /energy_data["fuel_economy"])*52
+    #charging/fueling costs 
+    fuel_costs_e = ((energy_data["energy_" + bus_type]*4.35*utility)/dc_efficiency )*12*(11.93422) + (num_chargers*calc_lib["charge_power_dc"][0]* demand_charge)*12*12
+    fuel_costs_d = fuel_price * (energy_data.VKT * 0.621371 /energy_data["fuel_economy"])*52*12.47295
     
     #infrastructure operations and maintainance cost 
-    infra_onm_e = cost_lib["charging _onm"][0] * num_chargers + cost_lib["batt_cost27"].values[0]* bus_lib[bus_lib.type == bus_type]["battery_size"].values[0]*  energy_data.num_buses
-    infra_onm_d = cost_lib["fuel_infra_costs"][0] * (energy_data.VKT * 0.621371 /energy_data["fuel_economy"])*52
+    infra_onm_e = cost_lib["charging _onm"][0] * num_chargers *12
+    infra_onm_d = cost_lib["fuel_infra_costs"][0] * (energy_data.VKT * 0.621371 /energy_data["fuel_economy"])*52*12
 
-    cities["TCO per route - D"]  =  np.ceil((capital_cost_d/calc_lib["annuity_factor"].values[0])+vmaint_cost_d+fuel_costs_d+infra_onm_d )
-    cities["TCO per route - E"]  = np.ceil((capital_cost_e/calc_lib["annuity_factor"].values[0])+vmaint_cost_e+fuel_costs_e+infra_onm_e)
+    cities["TCO per route - D"]  =  np.round((capital_cost_d+vmaint_cost_d+fuel_costs_d+infra_onm_d)/calc_lib["annuity_factor"].values[0] )
+    cities["TCO per route - E"]  = np.round((capital_cost_e+vmaint_cost_e+fuel_costs_e+infra_onm_e)/calc_lib["annuity_factor"].values[0] )
     cities["No of buses"] = energy_data.num_buses
-    cities["Emissions -E"] = np.ceil(energy_data["e_emi"+bus_type])
-    cities["Emissions -D"] = np.ceil(energy_data.d_emi)
-    cities["Health impact -D"] =  np.ceil(energy_data.e_impact)
-    cities["Level of Service -E"] = energy_data[bus_type + "_LOS"]
-    cities["Level of Service -D"] = energy_data["diesel_LOS"]
+    cities["Emissions -E"] = np.round(energy_data["e_emi"+bus_type], decimals = 2)
+    cities["Emissions -D"] = np.round(energy_data.d_emi, decimals = 2)
+    cities["Health impact -D"] =  np.round(energy_data.e_impact, decimals = 2)
+    cities["Fast Charging"] = energy_data[bus_type + "_LOS"]
+
     cities["Health impact -E"]= [0] * energy_data.shape[0] 
     
     return (cities.to_dict('records'))
