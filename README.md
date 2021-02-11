@@ -1,2 +1,2 @@
 # evfleets
- ev analysis for GTFS data 
+ EV analysis and modeling  using GTFS data 
